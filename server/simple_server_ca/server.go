@@ -17,26 +17,29 @@ import (
 
 type SearchService struct{}
 
-func (s *SearchService) Search(ctc context.Context, r *pb.SearchRequest) (*pb.SearchResponse, error) {
+func (s *SearchService) Search(ctx context.Context, r *pb.SearchRequest) (*pb.SearchResponse, error) {
+	if ctx.Err() == context.Canceled {
+		return nil, status.Errorf(codes.Canceled, "searchService.Search canceled")
+	}
 	return &pb.SearchResponse{Response: r.GetRequest() + "HTTP Server"}, nil
 }
 
 const PORT = "9002"
 
 func main() {
-	certFile := "../../cert/server/server.pem"
-	keyFile := "../../cert/server/server.key"
-	caFile := "../../cert/ca.pem"
+	// certFile := "../../cert/server/server.pem"
+	// keyFile := "../../cert/server/server.key"
+	// caFile := "../../cert/ca.pem"
 
 	tlsServer := gtls.Server{
-		CertFile: certFile,
-		KeyFile:  keyFile,
-		CaFile:   caFile,
+		CaFile:   "../../cert/ca.pem",
+		CertFile: "../../cert/server/server.pem",
+		KeyFile:  "../../cert/server/server.key",
 	}
 
 	c, err := tlsServer.GetCredentialByCA()
 	if err != nil {
-		log.Fatalf("tlsServer.GetTLSCredentials err: %v", err)
+		log.Fatalf("GetTLSCredentialsByCA err: %v", err)
 	}
 
 	opts := []grpc.ServerOption{
@@ -52,8 +55,9 @@ func main() {
 
 	lis, err := net.Listen("tcp", ":"+PORT)
 	if err != nil {
-		log.Fatalf("net.Listen err : %v", err)
+		log.Fatalf("net.Listen err: %v", err)
 	}
+
 	server.Serve(lis)
 }
 
