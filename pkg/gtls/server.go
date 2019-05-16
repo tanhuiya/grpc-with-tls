@@ -20,6 +20,7 @@ func (t *Server) GetCredentialByCA() (credentials.TransportCredentials, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	certPool := x509.NewCertPool()
 	ca, err := ioutil.ReadFile(t.CaFile)
 	if err != nil {
@@ -29,10 +30,11 @@ func (t *Server) GetCredentialByCA() (credentials.TransportCredentials, error) {
 	if ok := certPool.AppendCertsFromPEM(ca); !ok {
 		return nil, errors.New("certPool.AppendCertsFromPEM err")
 	}
+
 	c := credentials.NewTLS(&tls.Config{
 		Certificates: []tls.Certificate{cert},
 		ClientAuth:   tls.RequireAndVerifyClientCert,
-		RootCAs:      certPool,
+		ClientCAs:    certPool,
 	})
 	return c, err
 }
